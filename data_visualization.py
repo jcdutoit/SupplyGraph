@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 
+"""
+This is very old. It was used for visualizing the old auto data.
+"""
 AUTO_FINANCIAL_DATA = "../data/supply_data/auto_financial.csv"
 # FEATURE_OF_INTEREST = "EBIDTA/ToRev.(operating profitability)"
 # FEATURE_OF_INTEREST = "Trnovr"
