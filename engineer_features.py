@@ -39,7 +39,15 @@ class SupplyGraph():
     def __init__(self, edge_list_path=EDGE_LIST_PATH):
 
         self.edge_list = pd.read_csv(edge_list_path)
-        self.graph = nx.from_pandas_edgelist(self.edge_list, "source", "target")
+        self.graph = nx.from_pandas_edgelist(self.edge_list, "source", "target").to_undirected()
+
+        # Get the maximum color value
+
+        # Interestingly the graph is not fully connected there are 4 connected components
+
+        max_distance = 20 # This is a magic number Our graph is not connected but no length should be larger than 20
+        self.max_color = None
+        self.color_hash(np.array([max_distance]), np.array([max_distance]))
 
     def color_hash(self, d_x, d_y):
         """
@@ -55,10 +63,15 @@ class SupplyGraph():
 
         # Hash function
         colors = np.ones(len(d_x)) + min_d + d / 2 * (d / 2 + d % 2 - 1)
-        max_color = np.max(colors)
 
         # Create one-hot matrix
-        one_hot_colors = np.zeros((len(colors), 1 + int(max_color)))
+
+        if self.max_color is None:
+            # If this is the first time this function is called, set the max color
+            self.max_color = colors
+            return
+
+        one_hot_colors = np.zeros((len(colors), 1 + int(self.max_color)))
         one_hot_colors[np.arange(len(colors)), colors.astype(int)] = 1
         return one_hot_colors
 
@@ -79,11 +92,12 @@ class SupplyGraph():
         # Get the color hash for each node
         return self.color_hash(d_x, d_y)
 
-    
+            
+
 if __name__ == "__main__":
     sg = SupplyGraph()
     # This graph is suprisingly well connected. Using a 1 hop neighborhood, all nodes were directly connected.
-    one_hot_colors = sg.get_color_encoding(x="NXPI US Equity", y="BRSS US Equity", k_hop=2)
+    one_hot_colors = sg.get_color_encoding(x="NXPI US Equity", y="SNC TB Equity", k_hop=2)
     print(one_hot_colors.shape)
     plt.imshow(one_hot_colors, aspect='auto', cmap='viridis')
     plt.show()
