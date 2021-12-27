@@ -134,3 +134,4 @@ if __name__ == "__main__":
     # plt.show()
 
     sg.generate_training_data()
+    # This seems to have problems with the graph being disconnected.
