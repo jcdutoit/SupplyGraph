@@ -52,7 +52,7 @@ class SupplyGraph():
     def color_hash(self, d_x, d_y):
         """
         Returns hashes for the colors of the nodes based on topological importance in the
-        subgraph surrounding x and y. It may be of interest to add financial features 
+        subgraph surrounding x and y. It may be of interest to add financial X 
         into this hashing function so that color is based on both distance and financial data.
         """
 
@@ -84,20 +84,53 @@ class SupplyGraph():
         x_subgraph = nx.generators.ego_graph(self.graph, x, radius=k_hop)
         y_subgraph = nx.generators.ego_graph(self.graph, y, radius=k_hop)
         G = nx.compose(x_subgraph, y_subgraph)
+        print(G.number_of_nodes())
 
         # Find the distances from each node to x and y
         d_x = np.array(list(nx.algorithms.shortest_paths.generic.shortest_path_length(G, target=x).values()))
         d_y = np.array(list(nx.algorithms.shortest_paths.generic.shortest_path_length(G, target=y).values()))
 
+        print(d_x, d_y)
         # Get the color hash for each node
         return self.color_hash(d_x, d_y)
 
-            
+    def generate_training_data(self, k_hop=1, save=True):
+        """
+        Generate a training set of one_hot vectors
+        """
 
+        node_list = list(self.graph.nodes)
+        X = []
+        Y = []
+
+        for i in range(len(node_list)):
+            for j in range(i, len(node_list)):
+                print("Generating training data for " + str(i) + " and " + str(j))
+                v = self.get_color_encoding(node_list[i], node_list[j], k_hop)
+                X.append(v)
+                Y.append(int(self.graph.has_edge(node_list[i], node_list[j])))
+        
+        max_len = max([v.shape[0] for v in node_list])
+
+        # Pad the X to the maximum length
+        padded_X = []
+        for v in node_list:
+            if v.shape[0] < max_len:
+                v = np.pad(v, (0, max_len - v.shape[0]), 'constant')
+            padded_X.append(v)
+
+        if save:
+            np.save("X.npy", np.array(padded_X))
+            np.save("Y.npy", np.array(Y))
+        
+        return padded_X, Y
+
+    
 if __name__ == "__main__":
     sg = SupplyGraph()
-    # This graph is suprisingly well connected. Using a 1 hop neighborhood, all nodes were directly connected.
-    one_hot_colors = sg.get_color_encoding(x="NXPI US Equity", y="SNC TB Equity", k_hop=2)
-    print(one_hot_colors.shape)
-    plt.imshow(one_hot_colors, aspect='auto', cmap='viridis')
-    plt.show()
+    
+    # print(one_hot_colors.shape)
+    # plt.imshow(one_hot_colors, aspect='auto', cmap='viridis')
+    # plt.show()
+
+    sg.generate_training_data()
